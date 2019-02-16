@@ -46,7 +46,7 @@ class Application:
 
 
         #Obtener posiciones de los hijos
-
+        
 
         print("\n")
         print('Hijos binarios [{}]'.format(len( hijos_binarios )))
