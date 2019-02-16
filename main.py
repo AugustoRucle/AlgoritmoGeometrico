@@ -5,6 +5,7 @@ import numpy as np
 import math
 from tkinter import messagebox
 import scipy.stats as stats
+import statistics as _stats
 
 class Application:
     def __init__(self, master):
@@ -32,18 +33,27 @@ class Application:
         LISTA_BINARIOS, LISTA_ENTEROS = self.crear_poblacion(NUMERO_DE_CROMOSOMA, TAMANIO_GENOTIPOS)
         matrix_xy = self.obtener_matrix(NUMERO_DE_CROMOSOMA, TAMANIO_GENOTIPOS, LISTA_BINARIOS)
         matrix_xy = self.mapear_valores(NUMERO_DE_CROMOSOMA, matrix_xy, TAMANIO_GENOTIPOS, INTERVAL_X, INTERVAL_Y)
-        
+
         #Fitness
         lista_valores_z = self.obtener_valores_Z(matrix_xy)
         lista_probabilidades = self.obtener_probabilidades(lista_valores_z)
 
         #Apareamiento
-        self.apareamiento(lista_probabilidades, LISTA_BINARIOS)
+        hijos_binarios = self.apareamiento(lista_probabilidades, LISTA_BINARIOS)
 
+        #Mutacion
+        hijos_binarios_mutados = 
+
+        print("Hijos binarios")
+        print(hijos_binarios)
+        print("\n")
+        print("Lista binarios")
+        print(LISTA_BINARIOS)
         print("Valores Z")
         print(lista_valores_z)
         print("Probabilidades:")
         print(lista_probabilidades)
+        print("\n\n")
 
     def crear_poblacion(self, _NUMERO_DE_CROMOSOMA, _TAMANIO_GENOTIPOS):
         NUMERO_DE_CROMOSOMA, TAMANIO_GENOTIPOS = _NUMERO_DE_CROMOSOMA, 2**_TAMANIO_GENOTIPOS
@@ -56,39 +66,6 @@ class Application:
             lista_binarios.append(binario)
 
         return lista_binarios, lista_enteros
-    
-    def calculo_media(self, _lista_valores_z):
-        lista = _lista_valores_z
-        TAMANIO_LISTA = len(lista)
-        media = 0
-        for i in range(TAMANIO_LISTA):
-            media = media + lista[i]
-        
-        media = media / TAMANIO_LISTA
-        return media
-
-    def calculo_desviazion_estandar(self, _lista_valores_z, media):
-        lista = _lista_valores_z
-        TAMANIO_GENOTIPOS = len(lista)
-        sumatoria = 0
-        
-        for i in range(TAMANIO_GENOTIPOS):
-            valor = (lista[i] - media)**2
-            sumatoria = sumatoria + valor
-        
-        sumatoria = math.sqrt(sumatoria / TAMANIO_GENOTIPOS)
-
-        return sumatoria
-
-    def calculo_desvizacion_normal_estandar(self, _lista_valores_z, media, varianza):
-        TAMANIO_LISTA = len(_lista_valores_z)
-        lista, auxLista = [], _lista_valores_z
-
-        for i in range(TAMANIO_LISTA):
-            valor = (auxLista[i] - media) / varianza
-            lista.append(valor)
-
-        return lista
 
     def mapear_valores(self, _NUMERO_DE_CROMOSOMA, _MATRIX, _TAMANIO_GENOTIPOS, _INTERVALOS_X, _INTERVALOS_Y):
         NUMERO_DE_CROMOSOMA, MATRIX, TAMANIO_GENOTIPOS = _NUMERO_DE_CROMOSOMA, _MATRIX, _TAMANIO_GENOTIPOS / 2        
@@ -137,35 +114,30 @@ class Application:
 
         return [lista_binarios_x, lista_binarios_y]
 
-    def obtener_desviacion_acumulada(self, lista_valores_z, desviacion_estandar):
-        TAMAMIO_LISTA = len(lista_valores_z)
+    def calculo_desvizacion_normal_estandar(self, lista_valores_z, media, varianza):
         lista = []
+        lista = list(map(lambda x:(x - media) / varianza, lista_valores_z))
+        return lista
 
-        for i in range(TAMAMIO_LISTA):
-            valor = stats.norm.cdf(lista_valores_z[i], loc=0, scale=desviacion_estandar)
-            lista.append(valor)
-
+    def obtener_desviacion_acumulada(self, lista_valores_z, desviacion_estandar):
+        lista = []
+        lista = list(map(lambda x:stats.norm.cdf(x, loc=0, scale=desviacion_estandar) , lista_valores_z))
         return lista
 
     def obtener_probabilidades(self, _lista_valores_z):
         lista_valores_z = np.copy(_lista_valores_z)
-        # print("Valores de z: ")
-        # print(lista_valores_z)
-        media = self.calculo_media(lista_valores_z)
-        deviasion_estandar = self.calculo_desviazion_estandar(lista_valores_z, media)
-        # print('media: {}, deviasion_estandar: {}'.format(media, deviasion_estandar))
-        lista_valores_normal = self.calculo_desvizacion_normal_estandar(lista_valores_z, media, deviasion_estandar)
-        # print("desviazion normal: ")
-        # print(lista_valores_z)
+        media = _stats.mean(lista_valores_z)
+        deviasion_estandar = _stats.pstdev(lista_valores_z)
+        print('media: {}, deviasion_estandar: {}'.format(media, deviasion_estandar))
+        lista_valores_normal = self.calculo_desvizacion_normal_estandar(lista_valores_z, media, deviasion_estandar) 
         lista_probabilidades = self.obtener_desviacion_acumulada(lista_valores_normal, deviasion_estandar)
         return lista_probabilidades
 
     def apareamiento(self, _lista_probabilidades, _lista_valores_binarios):
-        lista_probabilidades, lista_valores_binarios =  np.copy(_lista_probabilidades), np.copy(_lista_valores_binarios)
-        TAMANIO_LISTA, j, lista_apareamiento, numero_apareamientos = len(_lista_valores_binarios), 0, [], 0
-        buscar_maximo = True
+        lista_probabilidades, lista_valores_binarios, hijos =  np.copy(_lista_probabilidades), np.copy(_lista_valores_binarios), []
+        TAMANIO_LISTA, buscar_maximo = len(_lista_valores_binarios), True
 
-        for i in range (TAMANIO_LISTA):
+        for i in range (TAMANIO_LISTA-1):
             maxima_probabilidad = lista_probabilidades[i]
 
             if not(buscar_maximo):
@@ -180,31 +152,74 @@ class Application:
                     maxima_probabilidad = (maxima_probabilidad-1) 
 
                 if(maxima_probabilidad > probabilidad_random_value):
-                    numero_apareamientos = numero_apareamientos + 1
-                    print("Con------------------------------------------------------------------>")
                     print('P: {}, M: {}'.format(lista_valores_binarios[i], lista_valores_binarios[j]))
-                    # hijo_uno, hijo_dos = self, aparear(lista_valores_binarios[i], lista_valores_binarios[j])
+                    hijo_uno, hijo_dos = self.aparear(lista_valores_binarios[i], lista_valores_binarios[j])
+                    hijos.append(hijo_uno); hijos.append(hijo_dos)
 
                 j = j + 1
 
-            if(numero_apareamientos == 0):
-                #lista_apareamiento.append(lista_valores_z[i])
-                print("Sin------------------------------------------------------------------------->")
-                print('PS: {}'.format(lista_valores_binarios[i]))
+        return hijos
 
-    # def aparear(self, _padre, _madre):
-        # padre, madre = _padre, _madre
+    def aparear(self, _padre, _madre):
+        lista_padre, lista_madre = _padre, _madre
+        hijo_uno, hijo_dos, acumulador, i = "", "", 0, 0
+        lista_point_crossover = self.obtener_point_crossover(len(lista_padre))
+        TAMANIO_LISTA_PC = len(lista_point_crossover) + 1
 
+        while i < TAMANIO_LISTA_PC:
+            j = 0
+            if(i == ( TAMANIO_LISTA_PC - 1 )):
+                part_padre, part_madre = lista_padre[acumulador:], lista_madre[acumulador:]
+                j = 1
+            else:
+                salto = acumulador + lista_point_crossover[i]
+                part_padre, part_madre = lista_padre[acumulador:salto], lista_madre[acumulador:salto]
+            
+            acumulador = acumulador + lista_point_crossover[i - j]
 
-    def imprimir_lista(self, LISTA):
-        for i in range(len(LISTA)):
-            print('i:{}, v:{}'.format(i, LISTA[i]))       
+            print('c1: {}, c2: {}'.format(part_padre, part_madre))
 
-    def imprimir_matrix(self, MATRIX):
-        TAMANIO_Y, TAMANIO_X =  len(MATRIX), len(MATRIX[0])
-        for j in range(TAMANIO_X):
-            print('x:{}, y:{}'.format(MATRIX[0][j], MATRIX[1][j]))
+            if(((i+1) % 2) != 0):
+                hijo_uno, hijo_dos = hijo_uno + part_padre, hijo_dos + part_madre 
+            if(((i+1) % 2) == 0):
+                hijo_uno, hijo_dos = hijo_uno + part_madre, hijo_dos + part_padre 
 
+            i = i + 1
+
+        print("Hijos:")
+        print('hijo_uno: {}'.format(hijo_uno))
+        print('hijo_dos: {}'.format(hijo_dos))
+
+        return hijo_uno, hijo_dos
+
+    def mutacion(self, _lista_hijos_binarios, _probabilidad_mutar_individuo, _probabilidad_mutar_gen):
+        lista_hijos_binarios, TAMANIO_LISTA_HIJOS = np.copy(_lista_hijos_binarios), len(_lista_hijos_binarios)
+        probabilidad_mutar_individuo, probabilidad_mutar_gen = _probabilidad_mutar_individuo, _probabilidad_mutar_gen
+
+        for i in range(TAMANIO_LISTA_HIJOS):
+            random_probabilidad_mutacion = random.random()
+            if(probabilidad_mutar_individuo)
+
+    def obtener_point_crossover(self, TAMANIO_CROMOSOMA):
+        acumulador_cut, i, cantidad_point_crossover = 0, 0, random.randint(1, 5)
+        lista_point_crossover = []
+
+        while i < cantidad_point_crossover:
+            longitud_cut = random.randint(3, 29)
+            acumulador_cut = acumulador_cut + longitud_cut
+            diferencia = TAMANIO_CROMOSOMA - acumulador_cut
+
+            if(diferencia > 0 and i < cantidad_point_crossover):
+                lista_point_crossover.append(longitud_cut)
+            else:
+                i = cantidad_point_crossover
+            
+            i = i + 1
+        print("Cantidad de cruza:")
+        print(lista_point_crossover)
+
+        return lista_point_crossover
+        
 if __name__ == '__main__':
     root = tk.Tk()
     app = Application(root)
