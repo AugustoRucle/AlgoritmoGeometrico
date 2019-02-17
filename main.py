@@ -1,11 +1,12 @@
 import tkinter as tk  # for python 3
-import pygubu, cv2
+import pygubu
 import random
 import numpy as np
 import math
 from tkinter import messagebox
 import scipy.stats as stats
 import statistics as _stats
+import matplotlib.pyplot as plt
 
 class Application:
     def __init__(self, master):
@@ -23,43 +24,65 @@ class Application:
 
     def empezar(self):
         # Get all my constants
-        TAMANIO_GENOTIPOS = 32
+        TAMANIO_GENOTIPOS, TAMANIO_POBLACION, MAXIMOS = 32, 0.60, True
         NUMERO_DE_CROMOSOMA = int(self.builder.get_variable('numCrom').get())
-        # NUMERO_DE_GENERACIONES = int(self.builder.get_variable('numeroGeneraciones').get())
+        NUMERO_DE_GENERACIONES = int(self.builder.get_variable('numeroGeneraciones').get())
         INTERVAL_X = self.builder.get_variable('interval_X').get()
         INTERVAL_Y = self.builder.get_variable('interval_Y').get() 
         
+        print('IX: {}, IY: {}'.format(INTERVAL_X, INTERVAL_Y))
+
         #Inicializar poblacion
-        LISTA_BINARIOS, LISTA_ENTEROS = self.crear_poblacion(NUMERO_DE_CROMOSOMA, TAMANIO_GENOTIPOS)
-        matrix_xy = self.obtener_componentes_xy(NUMERO_DE_CROMOSOMA, TAMANIO_GENOTIPOS, LISTA_BINARIOS)
-        matrix_xy = self.mapear_componente_xy(NUMERO_DE_CROMOSOMA, matrix_xy, TAMANIO_GENOTIPOS, INTERVAL_X, INTERVAL_Y)
-
-        #Fitness
-        lista_valores_z = self.obtener_valores_Z(matrix_xy)
-        lista_probabilidades = self.obtener_probabilidades(lista_valores_z)
-
-        #Apareamiento
-        hijos_binarios = self.apareamiento(lista_probabilidades, LISTA_BINARIOS)
-
-        #Mutacion
-        hijos_binarios_mutados = self.mutacion(hijos_binarios, 0.28, 0.23)
-
-
-        #Obtener posiciones de los hijos
+        hijos, lista_enteros = self.crear_poblacion(NUMERO_DE_CROMOSOMA, TAMANIO_GENOTIPOS)
         
+        for i in range( NUMERO_DE_GENERACIONES ):
+            #print("Hijos enteros")
+            #print(hijos)
+            matrix_xy = self.obtener_componentes_xy(len(hijos), TAMANIO_GENOTIPOS, hijos)
+            #print("Componentes")
+            #self.imprimir_matrix(matrix_xy, len(matrix_xy[0]))
+            matrix_xy = self.mapear_componente_xy(len(hijos), matrix_xy, TAMANIO_GENOTIPOS, INTERVAL_X, INTERVAL_Y)
+            #print("Mapeada")
+            #self.imprimir_matrix(matrix_xy, len(matrix_xy[0]))
 
-        print("\n")
-        print('Hijos binarios [{}]'.format(len( hijos_binarios )))
-        print('Hijos binarios mutados [{}]'.format(len( hijos_binarios )))
-        print('Lista binarios [{}]'.format(len(LISTA_BINARIOS)))
-        print("\n\n")
+            #Fitness
+            lista_valores_z = self.obtener_valores_Z(matrix_xy)
+
+            #print("Valores de z: {}".format(len(lista_valores_z)))
+            #print(lista_valores_z)
+            lista_probabilidades = self.obtener_probabilidades(lista_valores_z)
+            #print("hIJOS")
+            #print(hijos)
+            #print("Probabilidades")
+            #print(lista_probabilidades)
+            #print("Probabilidades agregadas")
+            hijos_probabilidad = self.agregar_probabilidad(lista_probabilidades, hijos)
+            #print(hijos_probabilidad)
+
+            #Apareamiento
+            hijos_binarios = self.apareamiento(hijos_probabilidad, len(hijos_probabilidad), MAXIMOS)
+
+            #print("Apareamiento:")
+            #print(hijos_binarios)
+
+            #Mutacion
+            hijos = self.mutacion(hijos_binarios, 1, 1)
+            #print("Mutacion:")
+            #print(hijos)
+            #print('Hijos binarios mutados [{}]'.format(len( hijos_binarios )))
+            #print('Lista binarios [{}]'.format(len(hijos)))
+
+            #Graficar
+            self.create_image_hijos(hijos, TAMANIO_GENOTIPOS, INTERVAL_X, INTERVAL_Y, 'imagen_{}'.format(i))
+
+            #print("\n\n")
 
     def crear_poblacion(self, _NUMERO_DE_CROMOSOMA, _TAMANIO_GENOTIPOS):
         NUMERO_DE_CROMOSOMA, TAMANIO_GENOTIPOS = _NUMERO_DE_CROMOSOMA, 2**_TAMANIO_GENOTIPOS
         lista_binarios, lista_enteros = [], []
 
         for i in range(NUMERO_DE_CROMOSOMA):
-            numero_random = random.randint(0, TAMANIO_GENOTIPOS-1)
+            numero_random = random.randint(0, TAMANIO_GENOTIPOS)
             binario = '{0:032b}'.format(numero_random)
             lista_enteros.append(numero_random)
             lista_binarios.append(binario)
@@ -67,7 +90,7 @@ class Application:
         return lista_binarios, lista_enteros
 
     def mapear_componente_xy(self, _NUMERO_DE_CROMOSOMA, _MATRIX, _TAMANIO_GENOTIPOS, _INTERVALOS_X, _INTERVALOS_Y):
-        NUMERO_DE_CROMOSOMA, MATRIX, TAMANIO_GENOTIPOS = _NUMERO_DE_CROMOSOMA, _MATRIX, _TAMANIO_GENOTIPOS / 2        
+        NUMERO_DE_CROMOSOMA, MATRIX, TAMANIO_GENOTIPOS = _NUMERO_DE_CROMOSOMA, np.copy(_MATRIX), _TAMANIO_GENOTIPOS / 2        
         TAMANIO_MATRIX_X = len(MATRIX[0])
         nueva_matrix = np.zeros_like(MATRIX)
         INTERVALOS_X = list(map(int, _INTERVALOS_X.split(":"))) #X[A:B]
@@ -76,11 +99,15 @@ class Application:
         DIFERENCIA_Y = (INTERVALOS_Y[1] - INTERVALOS_Y[0])/(2**TAMANIO_GENOTIPOS) #Y[D:C]
         DIFERENCIA_X = (INTERVALOS_X[1] - INTERVALOS_X[0])/(2**TAMANIO_GENOTIPOS) #X[B:A]
 
+        #print('D_Y: {}, D_X: {}'.format(DIFERENCIA_X, DIFERENCIA_Y))
+
         for i in range(TAMANIO_MATRIX_X):
             numero_x = int(MATRIX[0][i], 2)
             numero_y = int(MATRIX[1][i], 2)
+            #print('D_nx:{}, D_ny: {}'.format(numero_x, numero_y))
             nueva_matrix[0][i] = INTERVALOS_X[0] + numero_x * DIFERENCIA_X
             nueva_matrix[1][i] = INTERVALOS_Y[0] + numero_y * DIFERENCIA_Y
+            #print('M_nx:{}, M_ny: {}'.format(nueva_matrix[0][i], nueva_matrix[1][i]))
 
         return nueva_matrix
 
@@ -90,19 +117,19 @@ class Application:
         lista_valores_z = []
         for i in range(TAMANIO_X):
             valor_x, valor_y = float(MATRIX[0][i]), float(MATRIX[1][i])
-            aux_valor_x, valor_y = valor_x/math.pi,  valor_y/math.pi
+            aux_valor_x, valor_y = valor_x,  valor_y
             valor_seno, valor_cos = math.sin(math.radians(valor_y)), math.cos(math.radians(aux_valor_x))
             valor_z = (valor_x**2)*(valor_cos + valor_seno)
             lista_valores_z.append(valor_z)
-        
+
         return lista_valores_z
 
-    def obtener_componentes_xy(self, _NUMERO_DE_CROMOSOMA, _TAMANIO_GENOTIPOS, _LISTA_BINARIOS):
+    def obtener_componentes_xy(self, _NUMERO_DE_CROMOSOMA, _TAMANIO_GENOTIPOS, _lista_binarios):
         NUMERO_DE_CROMOSOMA, TAMANIO_GENOTIPOS = _NUMERO_DE_CROMOSOMA, int(_TAMANIO_GENOTIPOS / 2)
-        lista_binarios_x, lista_binarios_y, LISTA_BINARIOS = [], [], _LISTA_BINARIOS
+        lista_binarios_x, lista_binarios_y, lista_binarios = [], [], np.copy(_lista_binarios)
 
         for i in range(NUMERO_DE_CROMOSOMA):
-            binario = LISTA_BINARIOS[i]
+            binario = lista_binarios[i]
             value_x, value_y = binario[0:TAMANIO_GENOTIPOS], binario[TAMANIO_GENOTIPOS:]
             lista_binarios_x.append(value_x)
             lista_binarios_y.append(value_y)
@@ -127,19 +154,29 @@ class Application:
         lista_valores_z = np.copy(_lista_valores_z)
         media = _stats.mean(lista_valores_z)
         deviasion_estandar = _stats.pstdev(lista_valores_z)
-        print('media: {}, deviasion_estandar: {}'.format(media, deviasion_estandar))
+        #print('media: {}, deviasion_estandar: {}'.format(media, deviasion_estandar))
         lista_valores_normal = self.calculo_desvizacion_normal_estandar(lista_valores_z, media, deviasion_estandar) 
         lista_probabilidades = self.obtener_desviacion_acumulada(lista_valores_normal, deviasion_estandar)
         return lista_probabilidades
 
-    def apareamiento(self, _lista_probabilidades, _lista_valores_binarios):
-        lista_probabilidades, lista_valores_binarios, hijos =  np.copy(_lista_probabilidades), np.copy(_lista_valores_binarios), []
-        TAMANIO_LISTA, buscar_maximo = len(_lista_valores_binarios), True
+    def agregar_probabilidad(self, _lista_probabilidad, _hijos):
+        lista_probabilidad, lista_hijos_probabilidad =  _lista_probabilidad, []
+        TAMANIO_PROBABILIDAD = len(_hijos)
+
+        for i in range (TAMANIO_PROBABILIDAD):
+            tupla_hijos = (lista_probabilidad[i], _hijos[i])
+            lista_hijos_probabilidad.append(tupla_hijos)
+
+        return lista_hijos_probabilidad
+
+    def apareamiento(self, _lista_binarios_probabilidad, _TAMANIO_LISTA, _MAXIMOS):
+        lista_binarios_probabilidad, hijos =  _lista_binarios_probabilidad, []
+        TAMANIO_LISTA, BUSCAR_MAXIMO = _TAMANIO_LISTA, _MAXIMOS
 
         for i in range (TAMANIO_LISTA-1):
-            maxima_probabilidad = lista_probabilidades[i]
+            maxima_probabilidad,_ = _lista_binarios_probabilidad[i]
 
-            if not(buscar_maximo):
+            if not(BUSCAR_MAXIMO):
                 maxima_probabilidad = (maxima_probabilidad-1)
 
             j = i + 1
@@ -147,18 +184,20 @@ class Application:
             while j < TAMANIO_LISTA:
                 probabilidad_random_value = random.random()
                 #print('Pm: {}, Pr: {}'.format(maxima_probabilidad, probabilidad_random_value))
-                if not(buscar_maximo):
-                    maxima_probabilidad = (maxima_probabilidad-1) 
-
                 if(maxima_probabilidad > probabilidad_random_value):
-                    print('P: {}, M: {} '.format(lista_valores_binarios[i], lista_valores_binarios[j]))
-                    hijo_uno, hijo_dos = self.aparear(lista_valores_binarios[i], lista_valores_binarios[j])
+                    _, binario_uno = lista_binarios_probabilidad[i]
+                    _, binario_dos = lista_binarios_probabilidad[j]
+                    #print('P: {}, M: {} '.format(binario_uno, binario_dos))
+                    hijo_uno, hijo_dos = self.aparear(binario_uno, binario_dos)
                     hijos.append(hijo_uno); hijos.append(hijo_dos)
-                    print("\n")
+                    #print("\n")
 
                 j = j + 1
 
-        return hijos
+        #print("\n")
+        #print('Hijos binarios [{}]'.format(len( hijos )))
+
+        return  self.meteoro(hijos, True)
 
     def aparear(self, _padre, _madre):
         lista_padre, lista_madre = _padre, _madre
@@ -186,8 +225,8 @@ class Application:
 
             i = i + 1
 
-        print("Hijos:")
-        print('uno: {}, dos: {} '.format(hijo_uno, hijo_dos))
+        #print("Hijos:")
+        #print('uno: {}, dos: {} '.format(hijo_uno, hijo_dos))
 
         return hijo_uno, hijo_dos
 
@@ -197,19 +236,31 @@ class Application:
         for i in range(TAMANIO_LISTA_HIJOS):
             random_probabilidad_mutacion = random.random()
             if(probabilidad_mutar_individuo > random_probabilidad_mutacion):
+                #print("Hm: {}".format(lista_hijos_binarios[i]))
                 list_individuo = list(map(lambda individuo: self.mutar_gen(individuo, probabilidad_mutar_gen), lista_hijos_binarios[i]))
+                #print('LHC: {}'.format(list_individuo))
                 lista_hijos_binarios_mutados.append(''.join(str(individuo) for individuo in list_individuo))
+                #print('LHC: {}'.format(lista_hijos_binarios_mutados))
             else:
                 lista_hijos_binarios_mutados.append(lista_hijos_binarios[i])
+
+        #print("Mutados: {}".format(lista_hijos_binarios_mutados))
+
         return lista_hijos_binarios_mutados
     
     def mutar_gen(self, individuo, probabilidad_mutar_gen):
         random_probabilidad = random.random()
+        #print('Individuo:{}'.format(individuo))
+        #print("PG:{}, RP:{}".format(probabilidad_mutar_gen, random_probabilidad))
+        individuo = int(individuo)
         if(probabilidad_mutar_gen > random_probabilidad):
             if individuo == 0:
+                #print("Ahora es: 1")
                 return 1
             else: 
+                #print("Ahora es: 0")
                 return 0
+        #print("Lo mismo: {}".fomat(individuo))
         return individuo
 
     def obtener_point_crossover(self, TAMANIO_CROMOSOMA):
@@ -227,10 +278,52 @@ class Application:
                 i = cantidad_point_crossover
             
             i = i + 1
-        print('Cantidad de cruza: {}'.format(lista_point_crossover))
+        #print('Cantidad de cruza: {}'.format(lista_point_crossover))
 
         return lista_point_crossover
+
+    def meteoro(self, _hijos, MAXIMOS):
+        hijos = np.copy(_hijos)
+        LIMITE = int(len(hijos)*0.40)
         
+        #if(MAXIMOS):
+        #    hijos.sort()
+        #else:
+        #    hijos.sort(reverse=True) 
+
+        sobrevivientes = hijos[:100]
+
+        return sobrevivientes
+
+    def create_image_hijos(self, hijos, CANTIDAD_GENOTIPOS, INTERVAL_X, INTERVAL_Y, name_image):
+        CANTIDAD_HIJOS = len(hijos)
+        #print("Hijos:")
+        #print(hijos)
+        matrix_xy = self.obtener_componentes_xy(CANTIDAD_HIJOS, CANTIDAD_GENOTIPOS, hijos)
+        matrix_xy = self.mapear_componente_xy(CANTIDAD_HIJOS, matrix_xy, CANTIDAD_GENOTIPOS, INTERVAL_X, INTERVAL_Y)
+        #print("Matrix:")
+        self.imprimir_matrix(matrix_xy, len(matrix_xy[0]))
+
+        # Create plot
+        fig = plt.figure()
+        ax, area = fig.add_subplot(111), 8**2
+        plt.ylim(-500, 500)
+        plt.xlim(-500, 500)
+        
+        for i in range( CANTIDAD_HIJOS ):
+            coordenada_x = round(float(matrix_xy[0][i]),2)
+            coordenada_y = round(float(matrix_xy[1][i]),2)
+            #print("Cx: {}, Cy:{}".format(coordenada_x, coordenada_y))
+            ax.scatter(coordenada_x, coordenada_y, s=area, c="green", alpha=0.5)
+        
+        #print('Nombre imagen: {}'.format(name_image))
+        plt.savefig('image/{}'.format(name_image))
+        plt.close(fig)
+
+    def imprimir_matrix(self, matrix, _TAMANIO_FILAS):
+        for i in range(_TAMANIO_FILAS):
+            print("x:{}, y:{}".format(matrix[0][i], matrix[1][i]))
+
 if __name__ == '__main__':
     root = tk.Tk()
     app = Application(root)
