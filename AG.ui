@@ -12,7 +12,7 @@
       <object class="ttk.Label" id="Label_4">
         <property name="font">TkDefaultFont</property>
         <property name="text" translatable="yes">Algoritmo Genético</property>
-        <property name="width">30</property>
+        <property name="width">40</property>
         <layout>
           <property name="column">0</property>
           <property name="padx">5</property>
@@ -24,7 +24,7 @@
     <child>
       <object class="ttk.Label" id="Label_5">
         <property name="text" translatable="yes">Numero de cromosoma</property>
-        <property name="width">30</property>
+        <property name="width">40</property>
         <layout>
           <property name="column">0</property>
           <property name="propagate">True</property>
@@ -34,7 +34,7 @@
     </child>
     <child>
       <object class="ttk.Entry" id="numCrom">
-        <property name="textvariable">string:numCrom</property>
+        <property name="textvariable">int:numCrom</property>
         <layout>
           <property name="column">1</property>
           <property name="pady">10</property>
@@ -46,7 +46,7 @@
     <child>
       <object class="ttk.Label" id="Label_7">
         <property name="text" translatable="yes">Cantidad de generaciones</property>
-        <property name="width">30</property>
+        <property name="width">40</property>
         <layout>
           <property name="column">0</property>
           <property name="pady">10</property>
@@ -57,7 +57,7 @@
     </child>
     <child>
       <object class="ttk.Entry" id="numeroGeneraciones">
-        <property name="textvariable">string:numeroGeneraciones</property>
+        <property name="textvariable">int:numeroGeneraciones</property>
         <layout>
           <property name="column">1</property>
           <property name="propagate">True</property>
@@ -77,8 +77,9 @@
     </child>
     <child>
       <object class="ttk.Label" id="Label_8">
+        <property name="anchor">w</property>
         <property name="text" translatable="yes">Intervalos de X</property>
-        <property name="width">30</property>
+        <property name="width">40</property>
         <layout>
           <property name="column">0</property>
           <property name="pady">10</property>
@@ -89,8 +90,9 @@
     </child>
     <child>
       <object class="ttk.Label" id="Label_9">
+        <property name="anchor">w</property>
         <property name="text" translatable="yes">Intervalos de Y</property>
-        <property name="width">30</property>
+        <property name="width">40</property>
         <layout>
           <property name="column">0</property>
           <property name="propagate">True</property>
@@ -115,12 +117,56 @@
         <property name="text" translatable="yes">Empezar algoritmo</property>
         <property name="textvariable">string:btn_Empezar</property>
         <property name="underline">0</property>
-        <property name="width">30</property>
+        <property name="width">40</property>
         <layout>
           <property name="column">0</property>
           <property name="pady">20</property>
           <property name="propagate">True</property>
+          <property name="row">10</property>
+        </layout>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Label" id="Label_1">
+        <property name="text" translatable="yes">Porcentaje mutacion por individuo</property>
+        <property name="width">40</property>
+        <layout>
+          <property name="column">0</property>
+          <property name="propagate">True</property>
           <property name="row">6</property>
+        </layout>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Label" id="Label_2">
+        <property name="anchor">w</property>
+        <property name="text" translatable="yes">Porcentaje mutacion por gen</property>
+        <property name="width">40</property>
+        <layout>
+          <property name="column">0</property>
+          <property name="pady">10</property>
+          <property name="propagate">True</property>
+          <property name="row">7</property>
+        </layout>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Entry" id="porcentaje_individuo">
+        <property name="textvariable">double:porcentaje_individuo</property>
+        <layout>
+          <property name="column">1</property>
+          <property name="propagate">True</property>
+          <property name="row">6</property>
+        </layout>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Entry" id="porcentaje_gen">
+        <property name="textvariable">double:porcentaje_gen</property>
+        <layout>
+          <property name="column">1</property>
+          <property name="propagate">True</property>
+          <property name="row">7</property>
         </layout>
       </object>
     </child>
