@@ -26,56 +26,96 @@ class Application:
         builder.connect_callbacks(self)
 
     def empezar(self):
-        # Get all my constants
-        TAMANIO_GENOTIPOS, TAMANIO_POBLACION, MAXIMOS, GENERACIONES_REALES, i = 32, 0.60, True, 1, 0
+        TAMANIO_GENOTIPOS, GENERACIONES_REALES, i = 32, 1, 0
+
+        #Poblacion
         NUMERO_DE_CROMOSOMA = int(self.builder.get_variable('numCrom').get())
         NUMERO_DE_GENERACIONES = int(self.builder.get_variable('numeroGeneraciones').get())
+
+        #Intervalos (x_inicial, x_final, y_inicial, y_final)
         INTERVAL_X = self.builder.get_variable('interval_X').get()
         INTERVAL_Y = self.builder.get_variable('interval_Y').get()
+
+        #PODA
+        TAMANIO_POBLACION = int(self.builder.get_variable('tamanio_maximo').get())
+        PORCENTAJE_POBLACION = self.builder.get_variable('porcentaje_poblacion').get() 
+
+        #Porcentaje de mutacion
         PORCENTAJE_INDIVIDUO = self.builder.get_variable('porcentaje_individuo').get() 
         PORCENTAJE_GEN = self.builder.get_variable('porcentaje_gen').get() 
 
-        media_mejor, media_peor, media_normal = [], [], []
 
-        print('PI: {}, PG: {}'.format( PORCENTAJE_INDIVIDUO, PORCENTAJE_GEN ))
-        print('IX: {}, IY: {}'.format(INTERVAL_X, INTERVAL_Y))
+        media_mejor, media_peor, media_normal = [], [], []
+        bandera = True
+        #print('PI: {}, PG: {}'.format( PORCENTAJE_INDIVIDUO, PORCENTAJE_GEN ))
+        #print('IX: {}, IY: {}'.format(INTERVAL_X, INTERVAL_Y))
 
         #Inicializar poblacion
-        hijos, lista_enteros = self.crear_poblacion(NUMERO_DE_CROMOSOMA, TAMANIO_GENOTIPOS)
+        poblacion_binarios, lista_enteros = self.crear_poblacion(NUMERO_DE_CROMOSOMA, TAMANIO_GENOTIPOS)
         
         #Comenzar algoritmo
-        while i < NUMERO_DE_GENERACIONES:
-            print("h")
+        while i < NUMERO_DE_GENERACIONES and bandera:
             try:
-                #Obtener componente XY mapeados
-                matrix_xy = self.crear_componentes_xy(hijos, TAMANIO_GENOTIPOS, INTERVAL_X, INTERVAL_Y)
-
-                #Fitness
-                lista_valores_z = self.obtener_valores_Z(matrix_xy)
-                lista_probabilidades = self.obtener_probabilidades(lista_valores_z)
-                hijos_probabilidad = self.agregar_probabilidad(lista_probabilidades, hijos)
+                #Fitness a padres
+                #print("Padres:")
+                #print(poblacion_binarios)
+                matrix_xy_padres = self.crear_componentes_xy(poblacion_binarios, TAMANIO_GENOTIPOS, INTERVAL_X, INTERVAL_Y)
+                lista_valores_z_padres = self.obtener_valores_Z(matrix_xy_padres)
+                lista_probabilidades = self.obtener_probabilidades(lista_valores_z_padres)
+                padres_probabilidad = self.agregar_probabilidad(lista_probabilidades, poblacion_binarios)
+                padres_probabilidad.sort(key = lambda x: x[0], reverse=MAXIMOS)
 
                 #Apareamiento
-                hijos_binarios = self.apareamiento(hijos_probabilidad, len(hijos_probabilidad), MAXIMOS, media_mejor, media_peor, media_normal, lista_valores_z )
+                hijos_binarios = self.apareamiento(padres_probabilidad, len(padres_probabilidad), MAXIMOS, media_mejor, media_peor, media_normal, lista_valores_z_padres )
+                #print("Hijos:")
+                #print(hijos_binarios)
 
                 #Mutacion
-                hijos = self.mutacion(hijos_binarios, PORCENTAJE_INDIVIDUO, PORCENTAJE_GEN)
+                hijos_binarios = self.mutacion(hijos_binarios, PORCENTAJE_INDIVIDUO, PORCENTAJE_GEN)
+                #print("Mutacion:")
+                #print(hijos_binarios) 
+
+                #Fitness a hijos
+                matrix_xy_hijos = self.crear_componentes_xy(hijos_binarios, TAMANIO_GENOTIPOS, INTERVAL_X, INTERVAL_Y)
+                lista_valores_z_hijos = self.obtener_valores_Z(matrix_xy_hijos)
+                lista_probabilidades = self.obtener_probabilidades(lista_valores_z_hijos)
+                hijos_probabilidad = self.agregar_probabilidad(lista_probabilidades, hijos_binarios)
+
+               #print("Hijos probabilidades:")
+                #print(hijos_probabilidad)
                 
-                coincidencia, matrix_xy = self.buscar_coincidencia(hijos, TAMANIO_GENOTIPOS, INTERVAL_X, INTERVAL_Y)
+                #Suma las poblaciones
+                aux_poblacion = hijos_probabilidad + padres_probabilidad
+                #print('Poblacion:')
+                #print(aux_poblacion)
+                aux_poblacion.sort(key = lambda x: x[0], reverse=MAXIMOS)
+                #print('Poblacion ordenada')
+                #print(aux_poblacion)
+                poblacion_binarios = list(map(lambda x: x[1], aux_poblacion))
+                poblacion_binarios = self.meteoro(poblacion_binarios, 100)
+
+                #print("Poblacion final")
+                #print(poblacion)
+
+                coincidencia, matrix_xy = self.buscar_coincidencia(poblacion_binarios, TAMANIO_GENOTIPOS, INTERVAL_X, INTERVAL_Y)
 
                 #Graficar
-                self.create_image_hijos(matrix_xy, 'imagen_{}'.format(i), INTERVAL_X, INTERVAL_Y)
+                self.create_image_hijos(matrix_xy, 'imagen_{}'.format(i), len(poblacion_binarios), INTERVAL_X, INTERVAL_Y)
 
                 if(coincidencia):
-                    i = NUMERO_DE_GENERACIONES
+                    print("Acabo")
+                    bandera = False
                 else:
                     GENERACIONES_REALES = GENERACIONES_REALES + 1
                 
                 i = i + 1
             except ex:
+                print("ERROR--------------------------------------------------------------------------------------------------------->")
                 print(ex) 
-                i = NUMERO_DE_GENERACIONES
+                bandera = False
         
+        #print('Cantidad: {}'.format(i))
+
         self.crear_chart_media(media_normal, media_mejor, media_peor, GENERACIONES_REALES)
 
         self.crear_video()
@@ -108,8 +148,8 @@ class Application:
             numero_x = int(MATRIX[0][i], 2)
             numero_y = int(MATRIX[1][i], 2)
             #print('D_nx:{}, D_ny: {}'.format(numero_x, numero_y))
-            nueva_matrix[0][i] = INTERVALOS_X[0] + numero_x * DIFERENCIA_X
-            nueva_matrix[1][i] = INTERVALOS_Y[0] + numero_y * DIFERENCIA_Y
+            nueva_matrix[0][i] = INTERVALOS_X[0] + (numero_x * DIFERENCIA_X)
+            nueva_matrix[1][i] = INTERVALOS_Y[0] + (numero_y * DIFERENCIA_Y)
             #print('M_nx:{}, M_ny: {}'.format(nueva_matrix[0][i], nueva_matrix[1][i]))
 
         return nueva_matrix
@@ -129,8 +169,8 @@ class Application:
     def obtener_componentes_xy(self, _NUMERO_DE_CROMOSOMA, _TAMANIO_GENOTIPOS, _lista_binarios):
         NUMERO_DE_CROMOSOMA, TAMANIO_GENOTIPOS = _NUMERO_DE_CROMOSOMA, int(_TAMANIO_GENOTIPOS / 2)
         lista_binarios_x, lista_binarios_y, lista_binarios = [], [], np.copy(_lista_binarios)
-        print('TG: {}'.format(TAMANIO_GENOTIPOS))
-        print('Cl: {}'.format(len(_lista_binarios)))
+        #print('TG: {}'.format(TAMANIO_GENOTIPOS))
+        #print('Cl: {}'.format(len(_lista_binarios)))
         for i in range(NUMERO_DE_CROMOSOMA):
             binario = lista_binarios[i]
             value_x, value_y = binario[0:TAMANIO_GENOTIPOS], binario[TAMANIO_GENOTIPOS:]
@@ -180,7 +220,7 @@ class Application:
         media_mejor, cantidad_mejor, media_peor, cantidad_peor, media, cantidad_media = 0, 0, 0, 0, 0, 0
 
         for i in range (TAMANIO_LISTA-1):
-            maxima_probabilidad,_ = _lista_binarios_probabilidad[i]
+            maxima_probabilidad, binario_padre = _lista_binarios_probabilidad[i]
             exiteCruze = False
 
             if not(BUSCAR_MAXIMO):
@@ -188,14 +228,17 @@ class Application:
 
             j = i + 1
 
+            #pro_indi, binario_uno = lista_binarios_probabilidad[i]
+            #print('P:{} , I:{} , PI: {}'.format(maxima_probabilidad, binario_uno, pro_indi))
+
             while j < TAMANIO_LISTA:
                 probabilidad_random_value = random.random()
-                #print('Pm: {}, Pr: {}'.format(maxima_probabilidad, probabilidad_random_value))
+                #p2, binario_dos = lista_binarios_probabilidad[j]
+                #print('Pm: {}, I1: {} Pr: {}, I2: {} '.format(maxima_probabilidad, binario_uno, probabilidad_random_value, binario_dos))
                 if(maxima_probabilidad > probabilidad_random_value):
-                    _, binario_uno = lista_binarios_probabilidad[i]
-                    _, binario_dos = lista_binarios_probabilidad[j]
-                    #print('P: {}, M: {} '.format(binario_uno, binario_dos))
-                    hijo_uno, hijo_dos = self.aparear(binario_uno, binario_dos)
+                    _, binario_madre = lista_binarios_probabilidad[j]
+                    #print('P: {} - PP{}, M: {} - PM:{} '.format(binario_uno, p1, binario_dos, p2))
+                    hijo_uno, hijo_dos = self.aparear(binario_padre, binario_madre)
                     hijos.append(hijo_uno); hijos.append(hijo_dos)
                     exiteCruze = True
 
@@ -214,7 +257,10 @@ class Application:
         media_mejor, media_peor, media = self.obtener_promedios( media_mejor, cantidad_mejor, media_peor, cantidad_peor, media, cantidad_media )
         list_media_mejor.append(media_mejor); list_media_peor.append(media_peor); list_media.append(media)
 
-        return  self.meteoro(hijos, 20)
+        #print("Hijos:")
+        #print(hijos)
+        #self.meteoro(hijos, 100)
+        return hijos
 
     def obtener_promedios(self, mejor, cantidad_mejor, peor, cantidad_peor, media, cantidad_media):
         if(cantidad_mejor != 0):
@@ -303,7 +349,7 @@ class Application:
         lista_point_crossover = []
 
         while i < cantidad_point_crossover:
-            longitud_cut = random.randint(3, 29)
+            longitud_cut = random.randint(3, 28)
             acumulador_cut = acumulador_cut + longitud_cut
             diferencia = TAMANIO_CROMOSOMA - acumulador_cut
 
@@ -351,7 +397,7 @@ class Application:
         else:
             return False, matrix_xy
 
-    def create_image_hijos(self, _matrix_xy, name_image, _INTERVALOS_X, _INTERVALOS_Y):
+    def create_image_hijos(self, _matrix_xy, name_image, CANTIDAD_HIJOS, _INTERVALOS_X, _INTERVALOS_Y):
         CANTIDAD_HIJOS = len(_matrix_xy[0])
         INTERVALOS_X = list(map(int, _INTERVALOS_X.split(":"))) #X[A:B]
         INTERVALOS_Y = list(map(int, _INTERVALOS_Y.split(":"))) #Y[C:D]
@@ -361,7 +407,7 @@ class Application:
         # Create plot
         fig = plt.figure()
         ax, area = fig.add_subplot(111), 8**2
-        plt.title('Generacion: image_{}'.format(name_image))
+        plt.title('Generacion:{} #Individuos: {}'.format(name_image, CANTIDAD_HIJOS))
         plt.ylim( int(INTERVALOS_Y[0]) , int(INTERVALOS_Y[1]) )
         plt.xlim( int(INTERVALOS_X[0]) , int(INTERVALOS_X[1]) )
 
@@ -369,7 +415,7 @@ class Application:
             coordenada_x = round(float(_matrix_xy[0][i]),2)
             coordenada_y = round(float(_matrix_xy[1][i]),2)
 
-            #print("Cx: {}, Cy:{}".format(coordenada_x, coordenada_y))
+            print("Coorx: {}, Coory:{}".format(coordenada_x, coordenada_y))
             ax.scatter(coordenada_x, coordenada_y, s=area, c="green", alpha=0.5)
 
         plt.savefig('image/{}'.format(name_image))
@@ -379,13 +425,13 @@ class Application:
         CANTIDAD_MEDIA = len(list_media)
         lista_generaciones = []
 
-        print('Cantidad:{}, CANTIDAD_MEDIA: {} '.format(CANTIDAD_GENERACIONES, CANTIDAD_MEDIA))
+        #print('Cantidad:{}, CANTIDAD_MEDIA: {} '.format(CANTIDAD_GENERACIONES, CANTIDAD_MEDIA))
 
         for i in range(CANTIDAD_GENERACIONES):
             lista_generaciones.append(i+1)
 
-        print('Min: {}'.format(min(list_media_mejor + list_media_peor + list_media)))
-        print('Max: {}'.format(max(list_media_mejor + list_media_peor + list_media)))
+        #print('Min: {}'.format(min(list_media_mejor + list_media_peor + list_media)))
+        #print('Max: {}'.format(max(list_media_mejor + list_media_peor + list_media)))
 
         valor_minimo = min(list_media_mejor + list_media_peor + list_media)
         valor_maximo = max(list_media_mejor + list_media_peor + list_media)
@@ -396,19 +442,20 @@ class Application:
         plt.xlabel('Generaciones')
         plt.ylabel('Fitness')
         ax.set_ylim(bottom=valor_minimo, top=valor_maximo)
-        plt.plot(lista_generaciones, list_media_peor, 'ro-')
-        plt.plot(lista_generaciones, list_media_mejor, 'go-')
-        plt.plot(lista_generaciones, list_media,'b')
+        plt.plot(lista_generaciones, list_media_peor, 'ro-', label='Peores individuos')
+        plt.plot(lista_generaciones, list_media_mejor, 'go-', label='Mejores individuos')
+        plt.plot(lista_generaciones, list_media,'bo-', label='Promedios individuos')
+        plt.legend(loc='upper left')
         plt.show()
-
 
     def imprimir_matrix(self, matrix, _TAMANIO_FILAS):
         for i in range(_TAMANIO_FILAS):
             print("x:{}, y:{}".format(matrix[0][i], matrix[1][i]))
 
     def crear_video(self):
+        print('Entre')
         pathIn= 'image/'
-        pathOut = 'video/video.avi'
+        pathOut = 'video/videouno.avi'
         fps = 1.0
         frame_array = []
         files = [f for f in os.listdir(pathIn) if isfile(join(pathIn, f))]

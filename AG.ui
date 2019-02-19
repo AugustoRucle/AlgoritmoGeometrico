@@ -10,12 +10,19 @@
     </layout>
     <child>
       <object class="ttk.Label" id="Label_4">
+        <property name="background">#808080</property>
         <property name="font">TkDefaultFont</property>
+        <property name="foreground">#ffffff</property>
+        <property name="padding">10</property>
+        <property name="relief">sunken</property>
         <property name="text" translatable="yes">Algoritmo Genético</property>
+        <property name="underline">0</property>
         <property name="width">40</property>
+        <property name="wraplength">0</property>
         <layout>
           <property name="column">0</property>
           <property name="padx">5</property>
+          <property name="pady">5</property>
           <property name="propagate">True</property>
           <property name="row">0</property>
         </layout>
@@ -23,7 +30,7 @@
     </child>
     <child>
       <object class="ttk.Label" id="Label_5">
-        <property name="text" translatable="yes">Numero de cromosoma</property>
+        <property name="text" translatable="yes">Cantidad de la poblacion</property>
         <property name="width">40</property>
         <layout>
           <property name="column">0</property>
@@ -45,13 +52,13 @@
     </child>
     <child>
       <object class="ttk.Label" id="Label_7">
-        <property name="text" translatable="yes">Cantidad de generaciones</property>
+        <property name="text" translatable="yes">Número de generaciones</property>
         <property name="width">40</property>
         <layout>
           <property name="column">0</property>
           <property name="pady">10</property>
           <property name="propagate">True</property>
-          <property name="row">3</property>
+          <property name="row">14</property>
         </layout>
       </object>
     </child>
@@ -61,17 +68,18 @@
         <layout>
           <property name="column">1</property>
           <property name="propagate">True</property>
-          <property name="row">3</property>
+          <property name="row">14</property>
         </layout>
       </object>
     </child>
     <child>
       <object class="ttk.Entry" id="interval_X">
+        <property name="text" translatable="yes">-x : x+</property>
         <property name="textvariable">string:interval_X</property>
         <layout>
           <property name="column">1</property>
           <property name="propagate">True</property>
-          <property name="row">4</property>
+          <property name="row">3</property>
         </layout>
       </object>
     </child>
@@ -84,7 +92,7 @@
           <property name="column">0</property>
           <property name="pady">10</property>
           <property name="propagate">True</property>
-          <property name="row">4</property>
+          <property name="row">3</property>
         </layout>
       </object>
     </child>
@@ -102,6 +110,7 @@
     </child>
     <child>
       <object class="ttk.Entry" id="interval_Y">
+        <property name="text" translatable="yes">-y : y+</property>
         <property name="textvariable">string:interval_Y</property>
         <layout>
           <property name="column">1</property>
@@ -122,7 +131,7 @@
           <property name="column">0</property>
           <property name="pady">20</property>
           <property name="propagate">True</property>
-          <property name="row">10</property>
+          <property name="row">20</property>
         </layout>
       </object>
     </child>
@@ -133,7 +142,7 @@
         <layout>
           <property name="column">0</property>
           <property name="propagate">True</property>
-          <property name="row">6</property>
+          <property name="row">7</property>
         </layout>
       </object>
     </child>
@@ -146,7 +155,7 @@
           <property name="column">0</property>
           <property name="pady">10</property>
           <property name="propagate">True</property>
-          <property name="row">7</property>
+          <property name="row">8</property>
         </layout>
       </object>
     </child>
@@ -156,7 +165,7 @@
         <layout>
           <property name="column">1</property>
           <property name="propagate">True</property>
-          <property name="row">6</property>
+          <property name="row">7</property>
         </layout>
       </object>
     </child>
@@ -166,7 +175,162 @@
         <layout>
           <property name="column">1</property>
           <property name="propagate">True</property>
-          <property name="row">7</property>
+          <property name="row">8</property>
+        </layout>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Label" id="Label_3">
+        <property name="background">#808080</property>
+        <property name="font">TkDefaultFont</property>
+        <property name="foreground">#ffffff</property>
+        <property name="padding">5</property>
+        <property name="relief">sunken</property>
+        <property name="text" translatable="yes">Mutación</property>
+        <property name="underline">0</property>
+        <property name="width">40</property>
+        <layout>
+          <property name="column">0</property>
+          <property name="propagate">True</property>
+          <property name="row">6</property>
+        </layout>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Label" id="Label_6">
+        <property name="background">#808080</property>
+        <property name="font">TkDefaultFont</property>
+        <property name="foreground">#ffffff</property>
+        <property name="padding">5</property>
+        <property name="relief">sunken</property>
+        <property name="text" translatable="yes">PODA</property>
+        <property name="width">40</property>
+        <layout>
+          <property name="column">0</property>
+          <property name="pady">5</property>
+          <property name="propagate">True</property>
+          <property name="row">10</property>
+        </layout>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Label" id="Label_10">
+        <property name="text" translatable="yes">Tamaño maximo de población:</property>
+        <property name="width">40</property>
+        <layout>
+          <property name="column">0</property>
+          <property name="propagate">True</property>
+          <property name="row">11</property>
+        </layout>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Entry" id="tamanio_maximo">
+        <property name="textvariable">double:tamanio_maximo</property>
+        <layout>
+          <property name="column">1</property>
+          <property name="propagate">True</property>
+          <property name="row">11</property>
+        </layout>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Label" id="Label_11">
+        <property name="text" translatable="yes">Porcentaje del PODA</property>
+        <property name="underline">0</property>
+        <property name="width">40</property>
+        <layout>
+          <property name="column">0</property>
+          <property name="pady">10</property>
+          <property name="propagate">True</property>
+          <property name="row">12</property>
+        </layout>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Entry" id="porcentaje_poblacion">
+        <property name="textvariable">double:porcentaje_poblacion</property>
+        <layout>
+          <property name="column">1</property>
+          <property name="propagate">True</property>
+          <property name="row">12</property>
+        </layout>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Label" id="Label_12">
+        <property name="background">#808080</property>
+        <property name="font">TkDefaultFont</property>
+        <property name="foreground">#ffffff</property>
+        <property name="padding">5</property>
+        <property name="text" translatable="yes">Condiciones de paro</property>
+        <property name="width">40</property>
+        <layout>
+          <property name="column">0</property>
+          <property name="pady">10</property>
+          <property name="propagate">True</property>
+          <property name="row">13</property>
+        </layout>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Label" id="Label_13">
+        <property name="text" translatable="yes">Porcentaje de coincidencia:</property>
+        <property name="width">40</property>
+        <layout>
+          <property name="column">0</property>
+          <property name="propagate">True</property>
+          <property name="row">15</property>
+        </layout>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Entry" id="porcentaje_coincidencia">
+        <property name="textvariable">double:porcentaje_coincidencia</property>
+        <layout>
+          <property name="column">1</property>
+          <property name="propagate">True</property>
+          <property name="row">15</property>
+        </layout>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Label" id="Label_14">
+        <property name="background">#808080</property>
+        <property name="foreground">#ffffff</property>
+        <property name="padding">5</property>
+        <property name="relief">sunken</property>
+        <property name="text" translatable="yes">Busqueda</property>
+        <property name="width">40</property>
+        <layout>
+          <property name="column">0</property>
+          <property name="pady">20</property>
+          <property name="propagate">True</property>
+          <property name="row">16</property>
+        </layout>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Checkbutton" id="maximo_activo">
+        <property name="text" translatable="yes">Maximos</property>
+        <property name="textvariable">string:maximo_activo</property>
+        <property name="width">38</property>
+        <layout>
+          <property name="column">0</property>
+          <property name="propagate">True</property>
+          <property name="row">17</property>
+        </layout>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Checkbutton" id="minimos_activos">
+        <property name="text" translatable="yes">Minimos</property>
+        <property name="textvariable">string:minimos_activos</property>
+        <property name="width">20</property>
+        <layout>
+          <property name="column">1</property>
+          <property name="propagate">True</property>
+          <property name="row">17</property>
         </layout>
       </object>
     </child>
