@@ -311,26 +311,30 @@
       </object>
     </child>
     <child>
-      <object class="ttk.Checkbutton" id="maximo_activo">
-        <property name="text" translatable="yes">Maximos</property>
+      <object class="ttk.Radiobutton" id="maximo_activo">
+        <property name="text" translatable="yes">Maximo</property>
         <property name="textvariable">string:maximo_activo</property>
-        <property name="width">38</property>
+        <property name="value">True</property>
+        <property name="variable">boolean:1</property>
+        <property name="width">30</property>
         <layout>
           <property name="column">0</property>
           <property name="propagate">True</property>
-          <property name="row">17</property>
+          <property name="row">18</property>
         </layout>
       </object>
     </child>
     <child>
-      <object class="ttk.Checkbutton" id="minimos_activos">
-        <property name="text" translatable="yes">Minimos</property>
+      <object class="ttk.Radiobutton" id="minimos_activos">
+        <property name="text" translatable="yes">Minimo</property>
         <property name="textvariable">string:minimos_activos</property>
+        <property name="value">False</property>
+        <property name="variable">string:1</property>
         <property name="width">20</property>
         <layout>
           <property name="column">1</property>
           <property name="propagate">True</property>
-          <property name="row">17</property>
+          <property name="row">18</property>
         </layout>
       </object>
     </child>

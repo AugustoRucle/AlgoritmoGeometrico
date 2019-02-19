@@ -30,29 +30,42 @@ class Application:
 
         #Poblacion
         NUMERO_DE_CROMOSOMA = int(self.builder.get_variable('numCrom').get())
-        NUMERO_DE_GENERACIONES = int(self.builder.get_variable('numeroGeneraciones').get())
 
         #Intervalos (x_inicial, x_final, y_inicial, y_final)
         INTERVAL_X = self.builder.get_variable('interval_X').get()
         INTERVAL_Y = self.builder.get_variable('interval_Y').get()
 
-        #PODA
-        TAMANIO_POBLACION = int(self.builder.get_variable('tamanio_maximo').get())
-        PORCENTAJE_POBLACION = self.builder.get_variable('porcentaje_poblacion').get() 
-
         #Porcentaje de mutacion
         PORCENTAJE_INDIVIDUO = self.builder.get_variable('porcentaje_individuo').get() 
         PORCENTAJE_GEN = self.builder.get_variable('porcentaje_gen').get() 
 
+        #PODA
+        TAMANIO_POBLACION = int(self.builder.get_variable('tamanio_maximo').get())
+        PORCENTAJE_POBLACION = self.builder.get_variable('porcentaje_poblacion').get() 
+
+        #Condiciones de paro
+        NUMERO_DE_GENERACIONES = int(self.builder.get_variable('numeroGeneraciones').get())
+        PORCENTAJE_COINCIDENCIA = self.builder.get_variable('porcentaje_coincidencia').get()
+
+        #Busqueda maximos
+        exitMaximo = self.builder.get_variable('maximo_activo').get() 
+        exitMinimo = self.builder.get_variable('minimos_activos').get() 
+        MAXIMOS = True
 
         media_mejor, media_peor, media_normal = [], [], []
         bandera = True
+
         #print('PI: {}, PG: {}'.format( PORCENTAJE_INDIVIDUO, PORCENTAJE_GEN ))
         #print('IX: {}, IY: {}'.format(INTERVAL_X, INTERVAL_Y))
 
         #Inicializar poblacion
         poblacion_binarios, lista_enteros = self.crear_poblacion(NUMERO_DE_CROMOSOMA, TAMANIO_GENOTIPOS)
         
+        print('PC: {}'.format(PORCENTAJE_COINCIDENCIA))
+        
+        if(PORCENTAJE_COINCIDENCIA == 0.0):
+            PORCENTAJE_COINCIDENCIA = 1
+
         #Comenzar algoritmo
         while i < NUMERO_DE_GENERACIONES and bandera:
             try:
@@ -62,11 +75,11 @@ class Application:
                 matrix_xy_padres = self.crear_componentes_xy(poblacion_binarios, TAMANIO_GENOTIPOS, INTERVAL_X, INTERVAL_Y)
                 lista_valores_z_padres = self.obtener_valores_Z(matrix_xy_padres)
                 lista_probabilidades = self.obtener_probabilidades(lista_valores_z_padres)
-                padres_probabilidad = self.agregar_probabilidad(lista_probabilidades, poblacion_binarios)
+                padres_probabilidad = self.agregar_probabilidad(lista_probabilidades, poblacion_binarios, lista_valores_z_padres)
                 padres_probabilidad.sort(key = lambda x: x[0], reverse=MAXIMOS)
 
                 #Apareamiento
-                hijos_binarios = self.apareamiento(padres_probabilidad, len(padres_probabilidad), MAXIMOS, media_mejor, media_peor, media_normal, lista_valores_z_padres )
+                hijos_binarios = self.apareamiento(padres_probabilidad, len(padres_probabilidad), MAXIMOS )
                 #print("Hijos:")
                 #print(hijos_binarios)
 
@@ -79,7 +92,7 @@ class Application:
                 matrix_xy_hijos = self.crear_componentes_xy(hijos_binarios, TAMANIO_GENOTIPOS, INTERVAL_X, INTERVAL_Y)
                 lista_valores_z_hijos = self.obtener_valores_Z(matrix_xy_hijos)
                 lista_probabilidades = self.obtener_probabilidades(lista_valores_z_hijos)
-                hijos_probabilidad = self.agregar_probabilidad(lista_probabilidades, hijos_binarios)
+                hijos_probabilidad = self.agregar_probabilidad(lista_probabilidades, hijos_binarios, lista_valores_z_hijos)
 
                #print("Hijos probabilidades:")
                 #print(hijos_probabilidad)
@@ -89,15 +102,22 @@ class Application:
                 #print('Poblacion:')
                 #print(aux_poblacion)
                 aux_poblacion.sort(key = lambda x: x[0], reverse=MAXIMOS)
+                print(aux_poblacion)
+                aux_probabilidad = list(map(lambda x: x[2], aux_poblacion))
+                media_peor.append(min(aux_probabilidad)) 
+                media_mejor.append(max(aux_probabilidad))                
+                media_normal.append(sum(aux_probabilidad) / len(aux_probabilidad))
+                
+                #print('vm: {}, vmx: {}, vp: {}'.format(valor_minimo, valor_maximo, valor_promedio))
                 #print('Poblacion ordenada')
                 #print(aux_poblacion)
                 poblacion_binarios = list(map(lambda x: x[1], aux_poblacion))
-                poblacion_binarios = self.meteoro(poblacion_binarios, 100)
+                poblacion_binarios = self.meteoro(poblacion_binarios, 20)
 
                 #print("Poblacion final")
                 #print(poblacion)
 
-                coincidencia, matrix_xy = self.buscar_coincidencia(poblacion_binarios, TAMANIO_GENOTIPOS, INTERVAL_X, INTERVAL_Y)
+                coincidencia, matrix_xy = self.buscar_coincidencia(poblacion_binarios, TAMANIO_GENOTIPOS, PORCENTAJE_COINCIDENCIA,INTERVAL_X, INTERVAL_Y)
 
                 #Graficar
                 self.create_image_hijos(matrix_xy, 'imagen_{}'.format(i), len(poblacion_binarios), INTERVAL_X, INTERVAL_Y)
@@ -148,8 +168,8 @@ class Application:
             numero_x = int(MATRIX[0][i], 2)
             numero_y = int(MATRIX[1][i], 2)
             #print('D_nx:{}, D_ny: {}'.format(numero_x, numero_y))
-            nueva_matrix[0][i] = INTERVALOS_X[0] + (numero_x * DIFERENCIA_X)
-            nueva_matrix[1][i] = INTERVALOS_Y[0] + (numero_y * DIFERENCIA_Y)
+            nueva_matrix[0][i] = INTERVALOS_X[0] + numero_x * DIFERENCIA_X
+            nueva_matrix[1][i] = INTERVALOS_Y[0] + numero_y * DIFERENCIA_Y
             #print('M_nx:{}, M_ny: {}'.format(nueva_matrix[0][i], nueva_matrix[1][i]))
 
         return nueva_matrix
@@ -204,23 +224,23 @@ class Application:
         lista_probabilidades = self.obtener_desviacion_acumulada(lista_valores_normal, deviasion_estandar)
         return lista_probabilidades
 
-    def agregar_probabilidad(self, _lista_probabilidad, _hijos):
+    def agregar_probabilidad(self, _lista_probabilidad, _hijos, valores_z):
         lista_probabilidad, lista_hijos_probabilidad =  _lista_probabilidad, []
         TAMANIO_PROBABILIDAD = len(_hijos)
 
         for i in range (TAMANIO_PROBABILIDAD):
-            tupla_hijos = (lista_probabilidad[i], _hijos[i])
+            tupla_hijos = (lista_probabilidad[i], _hijos[i], valores_z[i])
             lista_hijos_probabilidad.append(tupla_hijos)
 
         return lista_hijos_probabilidad
 
-    def apareamiento(self, _lista_binarios_probabilidad, _TAMANIO_LISTA, _MAXIMOS, list_media_mejor, list_media_peor, list_media, lista_valores_z):
+    def apareamiento(self, _lista_binarios_probabilidad, _TAMANIO_LISTA, _MAXIMOS):
         lista_binarios_probabilidad, hijos =  _lista_binarios_probabilidad, []
-        TAMANIO_LISTA, BUSCAR_MAXIMO, exiteCruze = _TAMANIO_LISTA, _MAXIMOS, False
+        TAMANIO_LISTA, BUSCAR_MAXIMO = _TAMANIO_LISTA, _MAXIMOS
         media_mejor, cantidad_mejor, media_peor, cantidad_peor, media, cantidad_media = 0, 0, 0, 0, 0, 0
 
         for i in range (TAMANIO_LISTA-1):
-            maxima_probabilidad, binario_padre = _lista_binarios_probabilidad[i]
+            maxima_probabilidad, binario_padre,_ = _lista_binarios_probabilidad[i]
             exiteCruze = False
 
             if not(BUSCAR_MAXIMO):
@@ -236,26 +256,12 @@ class Application:
                 #p2, binario_dos = lista_binarios_probabilidad[j]
                 #print('Pm: {}, I1: {} Pr: {}, I2: {} '.format(maxima_probabilidad, binario_uno, probabilidad_random_value, binario_dos))
                 if(maxima_probabilidad > probabilidad_random_value):
-                    _, binario_madre = lista_binarios_probabilidad[j]
+                    _, binario_madre, _ = lista_binarios_probabilidad[j]
                     #print('P: {} - PP{}, M: {} - PM:{} '.format(binario_uno, p1, binario_dos, p2))
                     hijo_uno, hijo_dos = self.aparear(binario_padre, binario_madre)
                     hijos.append(hijo_uno); hijos.append(hijo_dos)
-                    exiteCruze = True
 
                 j = j + 1
-            
-            if( exiteCruze ):
-                media_mejor = media_mejor + lista_valores_z[i]
-                cantidad_mejor = cantidad_mejor + 1
-            else:
-                media_peor = media_peor + lista_valores_z[i]
-                cantidad_peor = cantidad_peor + 1
-
-            media = media + lista_valores_z[i]
-            cantidad_media = cantidad_media + 1
-
-        media_mejor, media_peor, media = self.obtener_promedios( media_mejor, cantidad_mejor, media_peor, cantidad_peor, media, cantidad_media )
-        list_media_mejor.append(media_mejor); list_media_peor.append(media_peor); list_media.append(media)
 
         #print("Hijos:")
         #print(hijos)
@@ -375,24 +381,37 @@ class Application:
         matrix_xy = self.mapear_componente_xy(CANTIDAD_HIJOS, matrix_xy, CANTIDAD_GENOTIPOS, INTERVAL_X, INTERVAL_Y)
         return matrix_xy
 
-    def buscar_coincidencia(self, _hijos, CANTIDAD_GENOTIPOS, INTERVAL_X, INTERVAL_Y):
-        CANTIDAD_HIJOS, cantidad_coincidencias = len(_hijos), 0
+    def buscar_coincidencia(self, _hijos, CANTIDAD_GENOTIPOS, PORCENTAJE_COINCIDENCIA, INTERVAL_X, INTERVAL_Y):
+        cantidad_coincidencias, lista_coincidencia = 0, []
 
         matrix_xy = self.crear_componentes_xy(_hijos, CANTIDAD_GENOTIPOS, INTERVAL_X, INTERVAL_Y)
-
-        VALUE_INICIAL_X = round(float(matrix_xy[0][0]),2)
-        VALUE_INICIAL_Y = round(float(matrix_xy[1][0]),2)
+        aux_matrix_xy = np.copy(matrix_xy)
+        CANTIDAD_HIJOS = len(matrix_xy[0])
 
         for i in range( CANTIDAD_HIJOS ):
             coordenada_x = round(float(matrix_xy[0][i]),2)
             coordenada_y = round(float(matrix_xy[1][i]),2)
-            #print('Coor_x: {}, Coor_y:{}'.format(coordenada_x, coordenada_y))
-            if((VALUE_INICIAL_Y == coordenada_y) and (VALUE_INICIAL_X == coordenada_x )):
-                cantidad_coincidencias = cantidad_coincidencias + 1
+            cantidad_coincidencias = 0
+            for j in range ( CANTIDAD_HIJOS ):
 
-        print('cantidad_coincidencias: {}, CH: {}'.format( cantidad_coincidencias, CANTIDAD_HIJOS ))
+                aux_coordenada_x = round(float(aux_matrix_xy[0][j]),2)
+                aux_coordenada_y = round(float(aux_matrix_xy[1][j]),2)
 
-        if( cantidad_coincidencias == CANTIDAD_HIJOS ):
+                if(coordenada_x == aux_coordenada_x and aux_coordenada_y  == coordenada_y ):
+                    aux_matrix_xy[0][j] = 0
+                    aux_matrix_xy[1][j] = 0
+                    cantidad_coincidencias = cantidad_coincidencias + 1
+
+            if(cantidad_coincidencias != 0):
+                lista_coincidencia.append((coordenada_x, coordenada_y, cantidad_coincidencias ))
+
+        lista_coincidencia.sort(key = lambda x: x[2], reverse=True)
+        
+        maximo_coincidencia = lista_coincidencia[0][2]
+
+        print("Maximo coincidencia: {}, CH: {}".format(maximo_coincidencia,  (CANTIDAD_HIJOS*PORCENTAJE_COINCIDENCIA) ))
+
+        if( maximo_coincidencia >= (CANTIDAD_HIJOS*PORCENTAJE_COINCIDENCIA) ):
             return True, matrix_xy
         else:
             return False, matrix_xy
