@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import os
 from os.path import isfile, join
 import cv2
+import sys
 
 class Application:
     def __init__(self, master):
@@ -31,21 +32,43 @@ class Application:
         #Poblacion
         NUMERO_DE_CROMOSOMA = int(self.builder.get_variable('numCrom').get())
 
+        if(NUMERO_DE_CROMOSOMA<=0):
+            messagebox.showinfo("Error","Numero de problación menor o igual a 0")
+
         #Intervalos (x_inicial, x_final, y_inicial, y_final)
         INTERVAL_X = self.builder.get_variable('interval_X').get()
         INTERVAL_Y = self.builder.get_variable('interval_Y').get()
+        if((INTERVAL_X.find('-')!=0)):
+            messagebox.showinfo("Error","Falta negativo en X")
+        if((INTERVAL_X.find(':')==-1)):
+            messagebox.showinfo("Error","Faltan : de separación en X")
+        if((INTERVAL_Y.find('-')!=0)):
+            messagebox.showinfo("Error","Falta negativo en Y")
+        if((INTERVAL_Y.find(':')==-1)):
+            messagebox.showinfo("Error","Faltan : de separación en Y")
 
         #Porcentaje de mutacion
         PORCENTAJE_INDIVIDUO = self.builder.get_variable('porcentaje_individuo').get() 
-        PORCENTAJE_GEN = self.builder.get_variable('porcentaje_gen').get() 
+        PORCENTAJE_GEN = self.builder.get_variable('porcentaje_gen').get()
+
+        if(PORCENTAJE_INDIVIDUO <= 0):
+            messagebox.showinfo("Error","Porcentaje de Individuo menor a 0")
+        if(PORCENTAJE_GEN <= 0):
+            messagebox.showinfo("Error","Porcentaje de gen menor a 0")
 
         #PODA
         TAMANIO_POBLACION = int(self.builder.get_variable('tamanio_maximo').get())
-        PORCENTAJE_POBLACION = self.builder.get_variable('porcentaje_poblacion').get() 
+        PORCENTAJE_POBLACION = self.builder.get_variable('porcentaje_poblacion').get()
+
+        #if(TAMANIO_POBLACION<=0 and PORCENTAJE_POBLACION<=0):
+        #    messagebox.showinfo("Error","Elija un tipo de poda")
 
         #Condiciones de paro
         NUMERO_DE_GENERACIONES = int(self.builder.get_variable('numeroGeneraciones').get())
         PORCENTAJE_COINCIDENCIA = self.builder.get_variable('porcentaje_coincidencia').get()
+
+        if(NUMERO_DE_GENERACIONES<=0 and PORCENTAJE_COINCIDENCIA<=0):
+            messagebox.showinfo("Error","Elija una condicion de paro")
 
         #Busqueda maximos
         exitMaximo = self.builder.get_variable('maximo_activo').get() 
@@ -54,6 +77,7 @@ class Application:
 
         media_mejor, media_peor, media_normal = [], [], []
         bandera = True
+        
 
         #print('PI: {}, PG: {}'.format( PORCENTAJE_INDIVIDUO, PORCENTAJE_GEN ))
         #print('IX: {}, IY: {}'.format(INTERVAL_X, INTERVAL_Y))
@@ -129,9 +153,12 @@ class Application:
                     GENERACIONES_REALES = GENERACIONES_REALES + 1
                 
                 i = i + 1
-            except ex:
+            except:
                 print("ERROR--------------------------------------------------------------------------------------------------------->")
-                print(ex) 
+                #print(ex)
+                print("Oops!",sys.exc_info()[0],"occured.")
+                print("Next entry.")
+                print()
                 bandera = False
         
         #print('Cantidad: {}'.format(i))
@@ -495,6 +522,8 @@ class Application:
             # writing to a image array
             out.write(frame_array[i])
         out.release()
+
+    
 
 if __name__ == '__main__':
     root = tk.Tk()
